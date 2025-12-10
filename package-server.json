@@ -1,0 +1,16 @@
+{
+  "name": "quickmart-fullstack",
+  "version": "1.0.0",
+  "description": "QuickMart Full Stack Application",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "npm start",
+    "install-all": "npm install && cd server && npm install",
+    "setup-db": "cd server && node scripts/seedProducts.js && node scripts/createAdmin.js",
+    "test-server": "cd server && node test-server.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
