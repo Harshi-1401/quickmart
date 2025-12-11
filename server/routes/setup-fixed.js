@@ -1,0 +1,86 @@
+const express = require('express');
+const Product = require('../models/Product');
+const User = require('../models/User');
+
+const router = express.Router();
+
+// Manual setup endpoint (for emergency use)
+router.post('/seed', async (req, res) => {
+  try {
+    // Clear existing data (optional)
+    const clearData = req.body.clear === true;
+    
+    if (clearData) {
+      await Product.deleteMany({});
+      await User.deleteMany({ role: { $ne: 'admin' } }); // Keep admin users
+      console.log('🗑️ Cleared existing data');
+    }
+    
+    // Check products (seeding is handled by server.js auto-seed)
+    const existingProducts = await Product.countDocuments();
+    if (existingProducts === 0) {
+      console.log('⚠️ No products found. Auto-seeding should handle this on server startup.');
+    } else {
+      console.log(`📦 Found ${existingProducts} products in database`);
+    }
+    
+    // Create admin user
+    const adminExists = await User.findOne({ email: 'admin@quickmart.com' });
+    if (!adminExists) {
+      const adminUser = new User({
+        name: 'Admin',
+        email: 'admin@quickmart.com',
+        password: 'admin123',
+        phone: '9876543210',
+        address: 'QuickMart HQ',
+        role: 'admin'
+      });
+      await adminUser.save();
+      console.log('👤 Admin user created');
+    }
+    
+    const productCount = await Product.countDocuments();
+    const userCount = await User.countDocuments();
+    
+    res.json({
+      success: true,
+      message: 'Database setup completed',
+      data: {
+        products: productCount,
+        users: userCount,
+        adminExists: !!adminExists
+      }
+    });
+    
+  } catch (error) {
+    console.error('Setup error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Setup failed',
+      error: error.message
+    });
+  }
+});
+
+// Check database status
+router.get('/status', async (req, res) => {
+  try {
+    const productCount = await Product.countDocuments();
+    const userCount = await User.countDocuments();
+    const adminExists = await User.findOne({ role: 'admin' });
+    
+    res.json({
+      database: 'connected',
+      products: productCount,
+      users: userCount,
+      adminExists: !!adminExists,
+      sampleProducts: productCount > 0 ? await Product.find().limit(3) : []
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+module.exports = router;

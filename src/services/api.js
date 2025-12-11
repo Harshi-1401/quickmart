@@ -18,11 +18,8 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-console.log('🔧 API Configuration:');
-console.log('- REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
-console.log('- NODE_ENV:', process.env.NODE_ENV);
-console.log('- Window hostname:', window.location.hostname);
-console.log('- Final API_BASE_URL:', API_BASE_URL);
+// API Configuration
+// Using production backend: https://quickmart-backend-tvuf.onrender.com/api
 
 const api = axios.create({
   baseURL: API_BASE_URL,
