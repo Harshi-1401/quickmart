@@ -1,9 +1,28 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'https://quickmart-backend-tvuf.onrender.com/api' 
-    : 'http://localhost:5000/api');
+// Determine API URL with multiple fallbacks
+const getApiBaseUrl = () => {
+  // 1. Check environment variable
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // 2. Check if we're on localhost (development)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000/api';
+  }
+  
+  // 3. Production fallback - always use Render backend
+  return 'https://quickmart-backend-tvuf.onrender.com/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log('🔧 API Configuration:');
+console.log('- REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- Window hostname:', window.location.hostname);
+console.log('- Final API_BASE_URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,

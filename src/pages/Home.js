@@ -3,6 +3,7 @@ import { initialProducts, categories } from '../data/products';
 import { productsAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import CartSidebar from '../components/CartSidebar';
+import ApiDebug from '../components/ApiDebug';
 import './Home.css';
 
 function Home() {
@@ -18,11 +19,16 @@ function Home() {
 
   const fetchProducts = async () => {
     try {
+      console.log('🔍 Fetching products from API...');
       const response = await productsAPI.getAll();
+      console.log('✅ API Response received:', response.data.length, 'products');
       setProducts(response.data);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('❌ Error fetching products:', error);
+      console.error('API URL:', process.env.REACT_APP_API_URL);
+      console.error('Environment:', process.env.NODE_ENV);
       // Fallback to initial products if API fails
+      console.log('📦 Using fallback local products');
       setProducts(initialProducts);
     }
   };
@@ -109,6 +115,7 @@ function Home() {
       </div>
 
       <CartSidebar />
+      <ApiDebug />
     </div>
   );
 }
