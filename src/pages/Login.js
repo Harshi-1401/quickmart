@@ -13,10 +13,47 @@ function Login() {
     address: ''
   });
   const [error, setError] = useState('');
+  const [emailValidated, setEmailValidated] = useState(false);
+  const [validatingEmail, setValidatingEmail] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
 
+
+  const validateEmail = async () => {
+    if (!formData.email) {
+      setError('Please enter an email address');
+      return;
+    }
+
+    setValidatingEmail(true);
+    setError('');
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://quickmart-backend-tvuf.onrender.com/api'}/auth/validate-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setEmailValidated(true);
+        setError('');
+      } else {
+        setError(data.message);
+        setEmailValidated(false);
+      }
+    } catch (error) {
+      setError('Failed to validate email. Please try again.');
+      setEmailValidated(false);
+    } finally {
+      setValidatingEmail(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,6 +67,11 @@ function Login() {
         setError(result.message);
       }
     } else {
+      // Registration validation
+      if (!emailValidated) {
+        setError('Please validate your email first');
+        return;
+      }
       if (!formData.name || !formData.phone || !formData.address) {
         setError('Please fill all fields');
         return;
@@ -54,13 +96,21 @@ function Login() {
         <div className="login-tabs">
           <button 
             className={isLogin ? 'active' : ''} 
-            onClick={() => setIsLogin(true)}
+            onClick={() => {
+              setIsLogin(true);
+              setEmailValidated(false);
+              setError('');
+            }}
           >
             Login
           </button>
           <button 
             className={!isLogin ? 'active' : ''} 
-            onClick={() => setIsLogin(false)}
+            onClick={() => {
+              setIsLogin(false);
+              setEmailValidated(false);
+              setError('');
+            }}
           >
             Register
           </button>
@@ -92,13 +142,29 @@ function Login() {
             </>
           )}
           
-          <input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-            required
-          />
+          <div className="email-validation-container">
+            <input
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={(e) => {
+                setFormData({...formData, email: e.target.value});
+                setEmailValidated(false);
+              }}
+              required
+            />
+            {!isLogin && (
+              <button
+                type="button"
+                onClick={validateEmail}
+                disabled={validatingEmail || emailValidated}
+                className={`validate-btn ${emailValidated ? 'validated' : ''}`}
+              >
+                {validatingEmail ? 'Validating...' : emailValidated ? '✓ Verified' : 'Validate Email'}
+              </button>
+            )}
+          </div>
+          
           <input
             type="password"
             placeholder="Password"
