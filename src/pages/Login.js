@@ -21,38 +21,41 @@ function Login() {
 
 
   const validateEmail = async () => {
-    if (!formData.email) {
-      setError('Please enter an email address');
+    if (!formData.email || !formData.phone) {
+      setError('Please enter both email and phone number');
       return;
     }
 
     setValidatingEmail(true);
     setError('');
 
-    // Basic email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
-      setValidatingEmail(false);
-      return;
-    }
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://quickmart-backend-tvuf.onrender.com/api'}/auth/validate-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: formData.email,
+          phone: formData.phone 
+        }),
+      });
 
-    // Email domain validation
-    const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
-    const emailDomain = formData.email.split('@')[1].toLowerCase();
-    
-    if (!allowedDomains.includes(emailDomain)) {
-      setError('Please use a valid email provider (Gmail, Yahoo, Outlook, Hotmail)');
-      setValidatingEmail(false);
-      return;
-    }
+      const data = await response.json();
 
-    // Simulate API call delay
-    setTimeout(() => {
-      setEmailValidated(true);
-      setError('');
+      if (response.ok) {
+        setEmailValidated(true);
+        setError('');
+      } else {
+        setError(data.message);
+        setEmailValidated(false);
+      }
+    } catch (error) {
+      setError('Failed to validate email and phone. Please try again.');
+      setEmailValidated(false);
+    } finally {
       setValidatingEmail(false);
-    }, 1000);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -130,7 +133,10 @@ function Login() {
                 type="tel"
                 placeholder="Phone Number"
                 value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, phone: e.target.value});
+                  setEmailValidated(false);
+                }}
                 required
               />
               <textarea
@@ -160,7 +166,7 @@ function Login() {
                 disabled={validatingEmail || emailValidated}
                 className={`validate-btn ${emailValidated ? 'validated' : ''}`}
               >
-                {validatingEmail ? 'Validating...' : emailValidated ? '✓ Verified' : 'Validate Email'}
+                {validatingEmail ? 'Validating...' : emailValidated ? '✓ Verified' : 'Validate Email & Phone'}
               </button>
             )}
           </div>
