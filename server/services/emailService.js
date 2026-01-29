@@ -63,7 +63,11 @@ class EmailService {
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS
-        }
+        },
+        // Add timeout settings to prevent hanging
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,   // 10 seconds
+        socketTimeout: 10000      // 10 seconds
       });
 <<<<<<< HEAD
     }
@@ -154,22 +158,25 @@ class EmailService {
       };
 
       const info = await this.transporter.sendMail(mailOptions);
+      console.log('✅ Email sent successfully. MessageID:', info.messageId);
       
       if (process.env.NODE_ENV === 'development') {
-        console.log('📧 Email sent successfully:', info.messageId);
         console.log('📧 Preview URL:', nodemailer.getTestMessageUrl(info));
       }
       
       return { success: true, messageId: info.messageId };
     } catch (error) {
+      console.error('❌ FULL EMAIL ERROR OBJECT:', JSON.stringify(error, null, 2));
+      
       const details = {
         message: error?.message,
         code: error?.code,
         response: error?.response,
         responseCode: error?.responseCode,
-        command: error?.command
+        command: error?.command,
+        stack: error?.stack
       };
-      console.error('❌ Email sending failed:', details);
+      console.error('❌ Email sending failed details:', details);
       return { success: false, error: error?.message || 'Email sending failed' };
     }
   }
