@@ -2,6 +2,7 @@ const express = require('express');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const { initialProducts } = require('../data/products');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -113,6 +114,17 @@ router.post('/test-email', async (req, res) => {
   } catch (error) {
     console.error('Test email error:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/email-status', async (req, res) => {
+  try {
+    const configured = emailService.isConfigured();
+    const from = emailService.getFromAddress();
+    const connection = await emailService.testConnection();
+    res.json({ configured, from, connection });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

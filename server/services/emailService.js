@@ -6,6 +6,7 @@ class EmailService {
     this.initializeTransporter();
   }
 
+<<<<<<< HEAD
   initializeTransporter() {
     // Check if we have explicit SMTP configuration
     if (process.env.SMTP_HOST && process.env.SMTP_USER) {
@@ -25,6 +26,38 @@ class EmailService {
     } else {
       // Default Gmail configuration
       console.log('📧 Using Default Gmail Configuration');
+=======
+  isConfigured() {
+    const hasGmail = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    const hasSmtp = Boolean(
+      process.env.SMTP_HOST &&
+        process.env.SMTP_PORT &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS
+    );
+    return hasGmail || hasSmtp;
+  }
+
+  getFromAddress() {
+    return process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER;
+  }
+
+  initializeTransporter() {
+    if (process.env.SMTP_HOST && process.env.SMTP_PORT && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+      return;
+    }
+
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+>>>>>>> f29d4a9 (Fix production OTP email sending on Render; add diagnostics endpoints; use SMTP/Gmail config with clear errors)
       this.transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -32,15 +65,45 @@ class EmailService {
           pass: process.env.EMAIL_PASS
         }
       });
+<<<<<<< HEAD
     }
+=======
+      return;
+    }
+
+    this.transporter = null;
+>>>>>>> f29d4a9 (Fix production OTP email sending on Render; add diagnostics endpoints; use SMTP/Gmail config with clear errors)
+  }
+
+  isConfigured() {
+    const hasGmail = Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    const hasSmtp = Boolean(
+      process.env.SMTP_HOST &&
+        process.env.SMTP_USER &&
+        process.env.SMTP_PASS
+    );
+    return hasGmail || hasSmtp;
+  }
+
+  getFromAddress() {
+    return process.env.EMAIL_FROM || process.env.EMAIL_USER || process.env.SMTP_USER;
   }
 
   async sendOTP(email, otp, name = 'User') {
     try {
+      if (!this.transporter) {
+        return { success: false, error: 'Email service not configured' };
+      }
+
+      const fromAddress = this.getFromAddress();
+      if (!fromAddress) {
+        return { success: false, error: 'Email sender address not configured' };
+      }
+
       const mailOptions = {
         from: {
           name: 'QuickMart',
-          address: process.env.EMAIL_USER
+          address: fromAddress
         },
         to: email,
         subject: 'Your QuickMart Verification Code',
@@ -99,13 +162,21 @@ class EmailService {
       
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('❌ Email sending failed:', error);
-      return { success: false, error: error.message };
+      const details = {
+        message: error?.message,
+        code: error?.code,
+        response: error?.response,
+        responseCode: error?.responseCode,
+        command: error?.command
+      };
+      console.error('❌ Email sending failed:', details);
+      return { success: false, error: error?.message || 'Email sending failed' };
     }
   }
 
   async testConnection() {
     try {
+      if (!this.transporter) return false;
       await this.transporter.verify();
       console.log('✅ Email service is ready');
       return true;
